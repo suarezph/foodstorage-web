@@ -12,18 +12,18 @@ technical names nobody sees, and renaming them would mean a migration for no gai
 
 ## Status
 
-| Area                                                                                  | State     |
-| ------------------------------------------------------------------------------------- | --------- |
-| Login with a username, session restore, change password, temporary passwords          | **Built** |
-| App shell (shadcn sidebar-16), household name in the sidebar, light/dark              | **Built** |
-| Home: expired, today, next 3 days, this week; "Use these first"                       | **Built** |
-| Storage: places, search, in storage / finished / thrown away, add food, item dialog   | **Built** |
-| Household: people; places and categories with default days (managers)                 | **Built** |
-| Admin: households, people, household roles, disable, reset password                   | **Built** |
-| Installable app (manifest, service worker), daily push notifications, settings card   | **Built** |
-| Barcode scan or type, shopping list, staples, waste report, freezer view              | **Built** |
-| "What can I cook?" on Home                                                            | **Built** |
-| Production (deploys with the API's `deploy/`; the CI deploy job waits for the server) | Ready     |
+| Area                                                                                           | State     |
+| ---------------------------------------------------------------------------------------------- | --------- |
+| Login with a username, session restore, change password, temporary passwords                   | **Built** |
+| App shell (shadcn sidebar-16), household name in the sidebar, light/dark                       | **Built** |
+| Home: expired, today, next 3 days, this week; "Use these first"                                | **Built** |
+| Storage: places, search, in storage / finished / thrown away, add food, item dialog            | **Built** |
+| Household: people; places and categories with default days (managers)                          | **Built** |
+| Admin: households, people, household roles, disable, reset password                            | **Built** |
+| Installable app (manifest, service worker), daily push notifications, settings card            | **Built** |
+| Barcode scan or type, shopping list, staples, waste report, freezer view                       | **Built** |
+| "What can I cook?" on Home                                                                     | **Built** |
+| Production: https://usefirst.alexjohnsuarez.com, deployed by CI on push to main (with the API) | **Live**  |
 
 Tests: `npm test` (fake API on `fetch`, never the network; plus a check that docs/stack.md matches package.json).
 
