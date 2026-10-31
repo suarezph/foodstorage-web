@@ -23,6 +23,7 @@ origin (in development Vite proxies `/api` to `http://localhost:3001`). The API 
 | `/freezer`         | in a household     | Every freezer, grouped by how long ago it went in (`placedOn`)                                                                                                                                         |
 | `/shopping`        | in a household     | Shopping list; staples running low; "Put away" a bought item (Add food filled in)                                                                                                                      |
 | `/waste`           | in a household     | Waste report: thrown away against eaten, why, what, per month                                                                                                                                          |
+| `/medicine`        | members, managers  | Medicine (API ADR 0008): expired / today / next 14 days, for whom, dose note; Add medicine. Viewers are sent to `/`                                                                                    |
 | `/household`       | in a household     | People; places and categories (managers change them)                                                                                                                                                   |
 | `/admin`           | admin              | Households and people: create, roles, move, disable, reset password                                                                                                                                    |
 | `/settings`        | everyone           | You (with email), daily summary (on/off, hour, by email and/or push on this device, tests), theme, password, sign out                                                                                  |
@@ -61,10 +62,18 @@ GitHub Actions builds the app (`npm run build`, plus `dist/version.txt`) and str
 `.tar.gz` over SSH; the server's `foodstorage-deploy` (API repo `deploy/deploy.sh`) unpacks it into
 `/var/www/foodstorage`. Nothing is built on the server.
 
+## Medicine
+
+Medicine shares the stock API with `kind=medicine` (`/stock`, `/stock/summary`, `/foods`). The add
+form takes `kind="medicine"`: medicine categories, the cabinet first, the printed date always, "For"
+and a dose note. `lib/food.js` words medicine urgency ("Expires in 10 days", "Expired: dispose of
+it"). Storage, Freezer, Waste and "What can I cook?" stay food only, and Storage hides the cabinet.
+The nav item and route need `member`; the API also refuses viewers.
+
 ## State
 
-Server state with TanStack Query (in memory only). Query keys: `['stock', ...]` (lists, summary,
-items), `['places']`, `['categories']`, `['foods']`, `['household']`, `['shopping']`,
+Server state with TanStack Query (in memory only). Query keys: `['stock', ...]` (lists, summary per kind,
+items), `['places']`, `['categories']`, `['foods', kind]`, `['household']`, `['shopping']`,
 `['reports', 'waste', months]`, `['push', ...]`, `['admin', ...]`. Any change to food invalidates
 `stock`, `places` (their counts), `foods` and `shopping`. "What can I cook?" is a mutation (asked
 each time, never cached). Lists refetch when the app comes back
@@ -76,7 +85,8 @@ into focus, because someone else in the family may have changed something.
 src/app/              routes, AuthContext, the shell (sidebar, header, account menu), nav.js
 src/components/ui/    shadcn/ui files (as the CLI writes them) and the kit in index.jsx
 src/features/auth     login, change password
-src/features/home     Home, "What can I cook?"
+src/features/home     Home, "What can I cook?", Getting started, the medicine notice
+src/features/medicine Medicine page (reuses stock's add form, item dialog and rows with kind="medicine")
 src/features/stock    Storage, Freezer, add form (barcode), item dialog (use, open, move, finish, throw away, staple, correct)
 src/features/shopping shopping list
 src/features/reports  waste report

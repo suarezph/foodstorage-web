@@ -34,7 +34,7 @@ export function StockRow({ item, today, onOpen, showPlace = true, extra }) {
             {showPlace && ` · ${item.place.name}`}
             {item.openedOn && ' · opened'}
             {item.status === 'active' &&
-              ` · ${item.dateKind === 'best_before' ? 'best before' : 'use by'} ${formatDay(item.useBefore, today)}`}
+              ` · ${item.food.kind === 'medicine' ? 'expires' : item.dateKind === 'best_before' ? 'best before' : 'use by'} ${formatDay(item.useBefore, today)}`}
             {item.expiresEstimated && item.status === 'active' && ' (estimated)'}
           </p>
           {extra && <p className="truncate text-xs text-muted-foreground">{extra}</p>}

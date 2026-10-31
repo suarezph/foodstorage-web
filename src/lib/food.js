@@ -28,6 +28,12 @@ export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function urgencyText(item) {
   const u = item.urgency;
   if (!u) return item.status === 'finished' ? 'Finished' : 'Thrown away';
+  // Medicine (ADR 0008): replaced, not used up; expired medicine goes, whatever the date says.
+  if (item.food?.kind === 'medicine') {
+    if (u.level === 'expired') return 'Expired: dispose of it';
+    if (u.level === 'today') return 'Expires today';
+    return u.daysLeft === 1 ? 'Expires tomorrow' : `Expires in ${u.daysLeft} days`;
+  }
   const bestBefore = item.dateKind === 'best_before';
   switch (u.level) {
     case 'expired':
@@ -78,6 +84,7 @@ export const PLACE_KINDS = [
   ['fridge', 'Fridge'],
   ['freezer', 'Freezer'],
   ['pantry', 'Pantry'],
+  ['cabinet', 'Medicine cabinet'],
   ['other', 'Other'],
 ];
 

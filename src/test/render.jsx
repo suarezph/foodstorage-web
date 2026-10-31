@@ -28,16 +28,42 @@ export const PLACES = [
   { id: 'p1', name: 'Fridge', kind: 'fridge', position: 0, activeCount: 2 },
   { id: 'p2', name: 'Freezer', kind: 'freezer', position: 1, activeCount: 0 },
   { id: 'p3', name: 'Pantry', kind: 'pantry', position: 2, activeCount: 0 },
+  { id: 'p4', name: 'Medicine cabinet', kind: 'cabinet', position: 3, activeCount: 0 },
 ];
 
 export const CATEGORIES = [
-  { id: 'c1', name: 'Dairy', fridgeDays: 7, freezerDays: 90, pantryDays: null, openedDays: 5 },
-  { id: 'c2', name: 'Snacks', fridgeDays: null, freezerDays: null, pantryDays: 90, openedDays: 14 },
+  {
+    id: 'c1',
+    kind: 'food',
+    name: 'Dairy',
+    fridgeDays: 7,
+    freezerDays: 90,
+    pantryDays: null,
+    openedDays: 5,
+  },
+  {
+    id: 'c2',
+    kind: 'food',
+    name: 'Snacks',
+    fridgeDays: null,
+    freezerDays: null,
+    pantryDays: 90,
+    openedDays: 14,
+  },
+  {
+    id: 'm1',
+    kind: 'medicine',
+    name: 'Pain & fever',
+    fridgeDays: null,
+    freezerDays: null,
+    pantryDays: null,
+    openedDays: null,
+  },
 ];
 
 export const item = (overrides = {}) => ({
   id: 's1',
-  food: { id: 'f1', name: 'Fresh milk', category: { id: 'c1', name: 'Dairy' } },
+  food: { id: 'f1', kind: 'food', name: 'Fresh milk', category: { id: 'c1', name: 'Dairy' } },
   place: { id: 'p1', name: 'Fridge', kind: 'fridge' },
   quantity: 2,
   unit: 'carton',
