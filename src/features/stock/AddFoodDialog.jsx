@@ -1,9 +1,11 @@
-import { useId, useState } from 'react';
+import { ScanBarcode } from 'lucide-react';
+import { useCallback, useId, useState } from 'react';
 import { z } from 'zod';
 import { Button, Dialog, ErrorNotice, Field, Input, Select } from '../../components/ui/index.jsx';
 import { addDaysIso, defaultDays, formatDay, localIso, UNITS } from '../../lib/food.js';
 import { useCategories, usePlaces } from '../household/hooks.js';
-import { useAddFood, useFoods } from './hooks.js';
+import { BarcodeScanner, canScan } from './BarcodeScanner.jsx';
+import { lookupBarcode, useAddFood, useFoods } from './hooks.js';
 
 const schema = z.object({
   name: z.string().trim().min(1, 'What is it?').max(80),
@@ -21,12 +23,16 @@ const blank = (placeId = '') => ({
   dateKind: 'use_by',
   expiresOn: '',
   notes: '',
+  barcode: '',
 });
 
+const BARCODE = /^[0-9]{8,14}$/;
+
 /**
- * Add food in a few taps. Typing a name the household had before fills in its category, unit and
- * place. Without a printed date the category's default is used, and the form says which date that
- * will be.
+ * Add food in a few taps. Typing a name the household had before, or scanning its barcode, fills in
+ * its category, unit and place. An unknown barcode gets its name from Open Food Facts and is
+ * remembered once added. Without a printed date the category's default is used, and the form says
+ * which date that will be.
  */
 export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
   const { data: places = [] } = usePlaces();
@@ -37,6 +43,9 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
   const [form, setForm] = useState(() => blank(defaultPlaceId ?? ''));
   const [errors, setErrors] = useState({});
   const [added, setAdded] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [found, setFound] = useState(null); // what the barcode lookup said
+  const [looking, setLooking] = useState(false);
 
   const placeId = form.placeId || places[0]?.id || '';
   const place = places.find((p) => p.id === placeId);
@@ -62,10 +71,47 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
     );
   };
 
+  const lookUp = useCallback(async (code) => {
+    setScanning(false);
+    setForm((f) => ({ ...f, barcode: code }));
+    if (!BARCODE.test(code)) {
+      setFound({ text: 'A barcode is 8 to 14 digits.', error: true });
+      return;
+    }
+    setLooking(true);
+    try {
+      const r = await lookupBarcode(code);
+      if (r.food) {
+        setForm((f) => ({
+          ...f,
+          barcode: code,
+          name: r.food.name,
+          categoryId: r.food.category?.id ?? '',
+          unit: r.food.unit,
+          placeId: r.food.lastPlaceId ?? f.placeId,
+        }));
+        setFound({ text: `${r.food.name}: you have had this before.` });
+      } else if (r.product) {
+        setForm((f) => ({ ...f, barcode: code, name: r.product.name }));
+        setFound({
+          text: `Found: ${[r.product.brand, r.product.quantity].filter(Boolean).join(', ') || r.product.name}. Check the name and pick a category.`,
+        });
+      } else {
+        setFound({ text: 'Not found. Type the name: this barcode will be remembered.' });
+      }
+    } catch (err) {
+      setFound({ text: err.message, error: true });
+    } finally {
+      setLooking(false);
+    }
+  }, []);
+
   const close = () => {
     setForm(blank(defaultPlaceId ?? ''));
     setErrors({});
     setAdded(null);
+    setScanning(false);
+    setFound(null);
     add.reset();
     onClose();
   };
@@ -92,9 +138,11 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
         dateKind: form.dateKind,
         ...(form.expiresOn ? { expiresOn: form.expiresOn } : {}),
         ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
+        ...(BARCODE.test(form.barcode) ? { barcode: form.barcode } : {}),
       });
       if (again) {
         setAdded(item);
+        setFound(null);
         setForm(blank(placeId));
       } else close();
     } catch {
@@ -111,6 +159,49 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
             Added {added.food.name}. Add the next one.
           </p>
         )}
+        <div className="space-y-2 rounded-lg border p-3">
+          {scanning ? (
+            <BarcodeScanner onCode={lookUp} onCancel={() => setScanning(false)} />
+          ) : (
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-40 flex-1">
+                <Field label="Barcode (optional)">
+                  {(p) => (
+                    <Input
+                      {...p}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="Numbers under the barcode"
+                      value={form.barcode}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, barcode: e.target.value.replace(/\D/g, '') }))
+                      }
+                    />
+                  )}
+                </Field>
+              </div>
+              <Button
+                variant="secondary"
+                loading={looking}
+                disabled={!form.barcode}
+                onClick={() => lookUp(form.barcode)}
+              >
+                Look up
+              </Button>
+              {canScan() && (
+                <Button variant="secondary" onClick={() => setScanning(true)}>
+                  <ScanBarcode aria-hidden="true" /> Scan
+                </Button>
+              )}
+            </div>
+          )}
+          {found && (
+            <p role="status" className={found.error ? 'text-sm text-negative' : 'text-sm'}>
+              {found.text}
+            </p>
+          )}
+        </div>
+
         <Field label="What is it?" error={errors.name}>
           {(p) => (
             <>
@@ -121,7 +212,6 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
                 onChange={onName}
                 placeholder="Fresh milk"
                 autoComplete="off"
-                autoFocus
               />
               <datalist id={listId}>
                 {foods.map((f) => (

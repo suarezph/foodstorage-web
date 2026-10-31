@@ -1,4 +1,13 @@
-import { House, Refrigerator, Settings, ShieldCheck, Users } from 'lucide-react';
+import {
+  ChartColumn,
+  House,
+  Refrigerator,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  Snowflake,
+  Users,
+} from 'lucide-react';
 
 /** Sidebar groups, in order. A group shows when one of its pages is visible to you. */
 export const NAV_GROUPS = [
@@ -13,6 +22,9 @@ export const NAV_GROUPS = [
 export const NAV = [
   { to: '/', label: 'Home', icon: House, group: 'food', household: true },
   { to: '/storage', label: 'Storage', icon: Refrigerator, group: 'food', household: true },
+  { to: '/freezer', label: 'Freezer', icon: Snowflake, group: 'food', household: true },
+  { to: '/shopping', label: 'Shopping list', icon: ShoppingCart, group: 'food', household: true },
+  { to: '/waste', label: 'Waste', icon: ChartColumn, group: 'food', household: true },
   { to: '/household', label: 'Household', icon: Users, group: 'food', household: true },
   {
     to: '/admin',

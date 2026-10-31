@@ -19,7 +19,10 @@ export const useItem = (id) =>
 
 export const useFoods = () => useQuery({ queryKey: ['foods'], queryFn: () => api('/foods') });
 
-/** Everything that changes food: lists, the summary, places' counts and food names refetch. */
+/**
+ * Everything that changes food: lists, the summary, places' counts, food names and the shopping
+ * list (finished food may be added; staples change) refetch.
+ */
 function useStockMutation(fn) {
   const qc = useQueryClient();
   return useMutation({
@@ -28,6 +31,7 @@ function useStockMutation(fn) {
       qc.invalidateQueries({ queryKey: ['stock'] });
       qc.invalidateQueries({ queryKey: ['places'] });
       qc.invalidateQueries({ queryKey: ['foods'] });
+      qc.invalidateQueries({ queryKey: ['shopping'] });
     },
   });
 }
@@ -45,3 +49,10 @@ export const useEditItem = () =>
 
 export const useDeleteItem = () =>
   useStockMutation((id) => api(`/stock/${id}`, { method: 'DELETE' }));
+
+/** A kind of food: its staple amount ("keep at least"), barcode, name, category or unit. */
+export const useEditFood = () =>
+  useStockMutation(({ id, ...body }) => api(`/foods/${id}`, { method: 'PATCH', body }));
+
+/** A scanned barcode: the household's food, or a name from Open Food Facts. */
+export const lookupBarcode = (code) => api(`/foods/barcode/${code}`);

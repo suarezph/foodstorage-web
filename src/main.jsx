@@ -18,6 +18,11 @@ const queryClient = new QueryClient({
   },
 });
 
+// Push notifications and "Add to Home Screen" need a service worker (public/sw.js).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

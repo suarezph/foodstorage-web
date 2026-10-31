@@ -3,8 +3,9 @@ import { Button, Card, PageHeader, Select } from '../../components/ui/index.jsx'
 import { ROLE_LABEL } from '../../lib/food.js';
 import { useTheme } from '../../lib/theme.js';
 import { ChangePasswordForm } from '../auth/ChangePasswordForm.jsx';
+import { NotificationsCard } from './NotificationsCard.jsx';
 
-/** Your account, password and appearance. */
+/** Your account, notifications, password and appearance. */
 export function SettingsPage() {
   const { user, logout } = useAuth();
   const [theme, setTheme] = useTheme();
@@ -41,7 +42,8 @@ export function SettingsPage() {
             <option value="dark">Dark</option>
           </Select>
         </Card>
-        <Card className="lg:col-span-2">
+        {user.household && <NotificationsCard />}
+        <Card className={user.household ? '' : 'lg:col-span-2'}>
           <h2 className="mb-3 font-semibold">Password</h2>
           <div className="max-w-md">
             <ChangePasswordForm />

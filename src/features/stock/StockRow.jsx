@@ -18,8 +18,8 @@ export function UrgencyBadge({ item, className }) {
   );
 }
 
-/** One batch in a list. The whole row opens it. */
-export function StockRow({ item, today, onOpen, showPlace = true }) {
+/** One batch in a list. The whole row opens it. `extra` adds a second line ("Frozen 2 months ago"). */
+export function StockRow({ item, today, onOpen, showPlace = true, extra }) {
   return (
     <li>
       <button
@@ -37,6 +37,7 @@ export function StockRow({ item, today, onOpen, showPlace = true }) {
               ` · ${item.dateKind === 'best_before' ? 'best before' : 'use by'} ${formatDay(item.useBefore, today)}`}
             {item.expiresEstimated && item.status === 'active' && ' (estimated)'}
           </p>
+          {extra && <p className="truncate text-xs text-muted-foreground">{extra}</p>}
         </div>
         <UrgencyBadge item={item} />
         <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

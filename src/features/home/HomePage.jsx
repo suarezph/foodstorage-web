@@ -1,7 +1,7 @@
 import { cn } from 'cn';
-import { Plus } from 'lucide-react';
+import { ChefHat, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../app/AuthContext.jsx';
 import {
   Button,
@@ -15,6 +15,7 @@ import { can } from '../../lib/food.js';
 import { AddFoodDialog } from '../stock/AddFoodDialog.jsx';
 import { useSummary } from '../stock/hooks.js';
 import { ItemDialog } from '../stock/ItemDialog.jsx';
+import { IdeasDialog } from './IdeasDialog.jsx';
 import { StockRow } from '../stock/StockRow.jsx';
 
 const TILES = [
@@ -28,8 +29,15 @@ const TILES = [
 export function HomePage() {
   const { user } = useAuth();
   const summary = useSummary();
-  const [adding, setAdding] = useState(false);
+  const [params, setParams] = useSearchParams();
+  // The installed app's "Add food" shortcut opens /?add=1.
+  const [adding, setAdding] = useState(() => params.get('add') === '1' && can(user, 'member'));
   const [openId, setOpenId] = useState(null);
+  const [ideas, setIdeas] = useState(false);
+  const stopAdding = () => {
+    setAdding(false);
+    if (params.has('add')) setParams({}, { replace: true });
+  };
 
   const header = (
     <PageHeader
@@ -37,9 +45,14 @@ export function HomePage() {
       description={user.household.name}
       actions={
         can(user, 'member') && (
-          <Button onClick={() => setAdding(true)}>
-            <Plus aria-hidden="true" /> Add food
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setIdeas(true)}>
+              <ChefHat aria-hidden="true" /> What can I cook?
+            </Button>
+            <Button onClick={() => setAdding(true)}>
+              <Plus aria-hidden="true" /> Add food
+            </Button>
+          </>
         )
       }
     />
@@ -110,8 +123,9 @@ export function HomePage() {
         </Card>
       )}
 
-      <AddFoodDialog open={adding} onClose={() => setAdding(false)} />
+      <AddFoodDialog open={adding} onClose={stopAdding} />
       <ItemDialog id={openId} onClose={() => setOpenId(null)} />
+      <IdeasDialog open={ideas} onClose={() => setIdeas(false)} />
     </div>
   );
 }

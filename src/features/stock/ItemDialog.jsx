@@ -11,7 +11,7 @@ import {
 } from '../../components/ui/index.jsx';
 import { can, formatDay, formatQuantity, UNITS } from '../../lib/food.js';
 import { usePlaces } from '../household/hooks.js';
-import { useAction, useDeleteItem, useEditItem, useItem } from './hooks.js';
+import { useAction, useDeleteItem, useEditFood, useEditItem, useItem } from './hooks.js';
 import { UrgencyBadge } from './StockRow.jsx';
 
 const EVENT_TEXT = {
@@ -45,6 +45,15 @@ function Facts({ item }) {
       `${formatDay(item.openedOn)}${item.openedExpiresOn ? `, use by ${formatDay(item.openedExpiresOn)}` : ''}`,
     ],
     ['Added', `${formatDay(item.addedOn)}${item.addedBy ? ` by ${item.addedBy}` : ''}`],
+    item.placedOn &&
+      item.placedOn !== item.addedOn && [
+        `In the ${item.place.name.toLowerCase()} since`,
+        formatDay(item.placedOn),
+      ],
+    item.food.keepAtLeast && [
+      'Staple',
+      `keep at least ${formatQuantity(item.food.keepAtLeast, item.unit)}`,
+    ],
     item.notes && ['Notes', item.notes],
   ].filter(Boolean);
   return (
@@ -59,6 +68,18 @@ function Facts({ item }) {
   );
 }
 
+const ShopBox = ({ checked, onChange }) => (
+  <label className="flex items-center gap-2 text-sm">
+    <input
+      type="checkbox"
+      className="size-4 accent-primary"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+    />
+    Add to the shopping list
+  </label>
+);
+
 /** One batch: what it is, what to do with it, and what happened to it. */
 export function ItemDialog({ id, onClose }) {
   const { user } = useAuth();
@@ -67,18 +88,22 @@ export function ItemDialog({ id, onClose }) {
   const action = useAction();
   const edit = useEditItem();
   const del = useDeleteItem();
+  const editFood = useEditFood();
   const [mode, setMode] = useState(null);
   const [value, setValue] = useState({});
+  const [shop, setShop] = useState(false);
 
   const isMember = can(user, 'member');
   const isManager = can(user, 'manager');
   const active = item?.status === 'active';
-  const busy = action.isPending || edit.isPending || del.isPending;
-  const fail = action.error ?? edit.error ?? del.error;
+  const busy = action.isPending || edit.isPending || del.isPending || editFood.isPending;
+  const fail = action.error ?? edit.error ?? del.error ?? editFood.error;
 
   const close = () => {
     setMode(null);
+    setShop(false);
     action.reset();
+    editFood.reset();
     edit.reset();
     del.reset();
     onClose();
@@ -86,6 +111,7 @@ export function ItemDialog({ id, onClose }) {
   const start = (m, initial = {}) => {
     action.reset();
     edit.reset();
+    editFood.reset();
     setValue(initial);
     setMode(m);
   };
@@ -120,7 +146,7 @@ export function ItemDialog({ id, onClose }) {
           {active && isMember && mode === null && (
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => start('use', { quantity: '1' })}>Use some</Button>
-              <Button variant="secondary" onClick={() => run('finish')} disabled={busy}>
+              <Button variant="secondary" onClick={() => start('finish')} disabled={busy}>
                 All used
               </Button>
               {!item.openedOn && (
@@ -136,6 +162,16 @@ export function ItemDialog({ id, onClose }) {
               </Button>
               <Button variant="danger" onClick={() => start('discard', { reason: 'expired' })}>
                 Thrown away
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  start('staple', {
+                    keepAtLeast: item.food.keepAtLeast ? String(item.food.keepAtLeast) : '',
+                  })
+                }
+              >
+                {item.food.keepAtLeast ? 'Change staple' : 'Mark as staple'}
               </Button>
               {isManager && (
                 <Button
@@ -240,12 +276,78 @@ export function ItemDialog({ id, onClose }) {
             </form>
           )}
 
+          {mode === 'finish' && (
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                run('finish', shop ? { addToShopping: true } : {});
+              }}
+            >
+              <p className="text-sm">All of it eaten or used?</p>
+              <ShopBox checked={shop} onChange={setShop} />
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setMode(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" loading={busy}>
+                  All used
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {mode === 'staple' && (
+            <form
+              className="space-y-3"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const n = Number(value.keepAtLeast);
+                try {
+                  await editFood.mutateAsync({
+                    id: item.food.id,
+                    keepAtLeast: value.keepAtLeast === '' || !n ? null : n,
+                  });
+                  setMode(null);
+                } catch {
+                  // shown from editFood.error
+                }
+              }}
+            >
+              <Field
+                label={`Always keep at least (${item.unit})`}
+                hint="When less is in storage, it shows under Running low on the shopping list. Empty: not a staple."
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    value={value.keepAtLeast}
+                    onChange={(e) => setValue({ keepAtLeast: e.target.value })}
+                    autoFocus
+                  />
+                )}
+              </Field>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setMode(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" loading={busy}>
+                  Save
+                </Button>
+              </div>
+            </form>
+          )}
+
           {mode === 'discard' && (
             <form
               className="space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                run('discard', { reason: value.reason });
+                run('discard', { reason: value.reason, ...(shop ? { addToShopping: true } : {}) });
               }}
             >
               <Field label="Why">
@@ -261,6 +363,7 @@ export function ItemDialog({ id, onClose }) {
                   </Select>
                 )}
               </Field>
+              <ShopBox checked={shop} onChange={setShop} />
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setMode(null)}>
                   Cancel
