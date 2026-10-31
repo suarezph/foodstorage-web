@@ -67,8 +67,8 @@ function Households() {
       )}
       {data.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No households yet. Create one, for example “Suarez Family Food Storage”. It starts with a
-          fridge, freezer, pantry and common food categories.
+          No households yet. Create one, for example “Suarez Family”. It starts with a fridge,
+          freezer, pantry and common food categories.
         </p>
       )}
       <ul className="divide-y text-sm">
@@ -109,7 +109,7 @@ function Households() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={80}
-                placeholder="Suarez Family Food Storage"
+                placeholder="Suarez Family"
               />
             )}
           </Field>

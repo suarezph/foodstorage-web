@@ -25,6 +25,11 @@ export function IdeasDialog({ open, onClose }) {
     >
       {ask.isPending ? (
         <Spinner label="Thinking of ideas" />
+      ) : ask.error?.code === 'NOTHING_SOON' ? (
+        // Not a failure: there is simply nothing close to its date.
+        <p className="text-sm text-muted-foreground">
+          Nothing needs using up this week. Ideas appear when food is within 7 days of its date.
+        </p>
       ) : ask.error ? (
         <ErrorNotice error={ask.error} />
       ) : ask.data ? (
