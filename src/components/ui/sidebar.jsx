@@ -59,7 +59,7 @@ function SidebarProvider({
         _setOpen(openState);
       }
 
-      // Food Storage (from Basemint): no cookie here (it would ride along on every API request). Layout persists the
+      // UseFirst (from Basemint): no cookie here (it would ride along on every API request). Layout persists the
       // state in localStorage through onOpenChange instead.
     },
     [setOpenProp, open],

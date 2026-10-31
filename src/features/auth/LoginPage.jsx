@@ -39,9 +39,9 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Food Storage"
+      title="UseFirst"
       subtitle="Sign in with the username you were given."
-      footer="Accounts are made by the person who manages Food Storage. There is no sign-up."
+      footer="Accounts are made by the person who manages UseFirst. There is no sign-up."
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
         {serverError && <ErrorNotice error={serverError} />}

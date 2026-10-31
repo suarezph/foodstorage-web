@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment:
       name: production
-      url: https://foodstorage.alexjohnsuarez.com
+      url: https://usefirst.alexjohnsuarez.com
     # One deploy at a time per repo; the server also queues deploys from both repos.
     concurrency:
       group: production

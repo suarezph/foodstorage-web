@@ -1,5 +1,5 @@
 /*
- * Food Storage's app-level UI kit (copied from Basemint), built on shadcn/ui (the files next to this one). Feature code
+ * UseFirst's app-level UI kit (copied from Basemint), built on shadcn/ui (the files next to this one). Feature code
  * imports from here; the shadcn files stay close to upstream so `npx shadcn add` can update them.
  */
 import { AlertCircle, Loader2 } from 'lucide-react';

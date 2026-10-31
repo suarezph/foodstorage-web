@@ -50,11 +50,9 @@ export function AppSidebar(props) {
               <NavLink to={user.household ? '/' : '/settings'}>
                 <BrandMark />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
-                    {user.household?.name ?? 'Food Storage'}
-                  </span>
+                  <span className="truncate font-medium">{user.household?.name ?? 'UseFirst'}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {user.household ? 'Food Storage' : 'No household yet'}
+                    {user.household ? 'UseFirst' : 'No household yet'}
                   </span>
                 </div>
               </NavLink>

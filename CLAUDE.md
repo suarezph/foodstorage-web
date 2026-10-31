@@ -1,10 +1,14 @@
-# Food Storage Web
+# UseFirst Web
 
-React + Vite client for **Food Storage**, a private family app: what food a household has, where,
+React + Vite client for **UseFirst**, a private family app: what food a household has, where,
 and what expires soon. Backend and API contract: `suarezph/foodstorage-api` (`docs/api.md` is the
 source of truth; the date rules are in its `docs/features/stock.md`). No public sign-up: the admin
 creates households and accounts (API ADR 0002). Built on a copy of Basemint's web base; the two
 apps share nothing at runtime (API ADR 0001).
+
+**Name:** the app is called **UseFirst** (renamed from "Food Storage" on 2026-10-31) at **usefirst.alexjohnsuarez.com**. Repos, the
+database, the system user, service names keep `foodstorage`: they are
+technical names nobody sees, and renaming them would mean a migration for no gain.
 
 ## Status
 

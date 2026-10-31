@@ -1,6 +1,6 @@
 # Stack
 
-Everything the Food Storage web app uses, with versions. `src/stack-doc.test.js` fails if the
+Everything the UseFirst web app uses, with versions. `src/stack-doc.test.js` fails if the
 "Installed packages" tables and `package.json` disagree. Update this file in the same change as any
 dependency.
 

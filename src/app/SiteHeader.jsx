@@ -20,7 +20,7 @@ function PageCrumbs() {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem className="hidden sm:inline-flex">
-          {group?.label ?? 'Food Storage'}
+          {group?.label ?? 'UseFirst'}
         </BreadcrumbItem>
         {page && (
           <>
