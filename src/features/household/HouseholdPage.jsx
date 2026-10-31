@@ -123,7 +123,7 @@ function CategoryRow({ category, manage, save }) {
         {category.name}
       </th>
       {DAY_FIELDS.map(([k, label]) => (
-        <td key={k} className="px-1 py-1">
+        <td key={k} className="w-20 px-1 py-1">
           {manage ? (
             <Input
               aria-label={`${category.name}, ${label}, days`}
@@ -133,7 +133,7 @@ function CategoryRow({ category, manage, save }) {
               max="3650"
               value={form[k]}
               onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))}
-              className="h-8 w-16 px-2 text-right"
+              className="ml-auto h-8 w-16 px-2 text-right"
             />
           ) : (
             <span className="block text-right tabular-nums">{category[k] ?? '–'}</span>
@@ -187,11 +187,16 @@ function Categories({ manage }) {
             <tr className="text-left text-muted-foreground">
               <th className="py-1 font-medium">Category</th>
               {DAY_FIELDS.map(([k, label]) => (
-                <th key={k} className="px-1 py-1 text-right font-medium">
+                <th key={k} className="w-20 px-1 py-1 text-right font-medium whitespace-nowrap">
                   {label}
                 </th>
               ))}
-              {manage && <th className="sr-only">Actions</th>}
+              {/* A real cell (only its text is hidden), so the columns line up with the rows. */}
+              {manage && (
+                <th>
+                  <span className="sr-only">Actions</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>

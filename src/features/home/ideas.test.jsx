@@ -53,7 +53,8 @@ describe('What can I cook?', () => {
     renderApp('/');
     await screen.findByText('Your storage is empty');
     await userEvent.click(screen.getByRole('button', { name: 'What can I cook?' }));
-    expect(await screen.findByText('Nothing needs using up this week')).toBeInTheDocument();
+    expect(await screen.findByText(/Nothing needs using up this week/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('is not offered to viewers', async () => {
