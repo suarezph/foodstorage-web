@@ -47,6 +47,15 @@ jobs:
       group: production
       cancel-in-progress: false
     steps:
+      # The app is built here, not on the 512 MB server; the server only unpacks it.
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: echo "${GITHUB_SHA::7}" > dist/version.txt
       - name: Deploy over SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -57,5 +66,6 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOST" > ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "deploy@$DEPLOY_HOST"
+          # The built app on stdin = deploy the web half (foodstorage-api deploy/deploy.sh).
+          tar -czf - -C dist . | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes "deploy@$DEPLOY_HOST"

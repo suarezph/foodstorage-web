@@ -14,18 +14,18 @@ origin (in development Vite proxies `/api` to `http://localhost:3001`). The API 
 
 ## Routes
 
-| Path               | Who                | What                                                                                                                                                 |
-| ------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`           | anyone             | Username or email, and password                                                                                                                      |
-| `/change-password` | temporary password | Choose your own                                                                                                                                      |
-| `/`                | in a household     | Home: counts (expired, today, next 3 days, this week), "Use these first", "What can I cook?"; `?add=1` opens Add food (the installed app's shortcut) |
-| `/storage`         | in a household     | Everything, most urgent first; `?place=`, `?status=`, `?urgency=`                                                                                    |
-| `/freezer`         | in a household     | Every freezer, grouped by how long ago it went in (`placedOn`)                                                                                       |
-| `/shopping`        | in a household     | Shopping list; staples running low                                                                                                                   |
-| `/waste`           | in a household     | Waste report: thrown away against eaten, why, what, per month                                                                                        |
-| `/household`       | in a household     | People; places and categories (managers change them)                                                                                                 |
-| `/admin`           | admin              | Households and people: create, roles, move, disable, reset password                                                                                  |
-| `/settings`        | everyone           | You (with email), daily summary (on/off, hour, by email and/or push on this device, tests), theme, password, sign out                                |
+| Path               | Who                | What                                                                                                                                                                                                   |
+| ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/login`           | anyone             | Username or email, and password                                                                                                                                                                        |
+| `/change-password` | temporary password | Choose your own                                                                                                                                                                                        |
+| `/`                | in a household     | Home: counts (expired, today, next 3 days, this week), "Use these first", "What can I cook?", a "Getting started" checklist for new households; `?add=1` opens Add food (the installed app's shortcut) |
+| `/storage`         | in a household     | Everything, most urgent first; `?place=`, `?status=`, `?urgency=`                                                                                                                                      |
+| `/freezer`         | in a household     | Every freezer, grouped by how long ago it went in (`placedOn`)                                                                                                                                         |
+| `/shopping`        | in a household     | Shopping list; staples running low; "Put away" a bought item (Add food filled in)                                                                                                                      |
+| `/waste`           | in a household     | Waste report: thrown away against eaten, why, what, per month                                                                                                                                          |
+| `/household`       | in a household     | People; places and categories (managers change them)                                                                                                                                                   |
+| `/admin`           | admin              | Households and people: create, roles, move, disable, reset password                                                                                                                                    |
+| `/settings`        | everyone           | You (with email), daily summary (on/off, hour, by email and/or push on this device, tests), theme, password, sign out                                                                                  |
 
 Someone without a household sees "You are not in a household yet"; an admin without one is sent
 to `/admin`. Buttons a role cannot use are hidden (`can(user, role)` in `src/lib/food.js`); the API
@@ -49,9 +49,17 @@ checks every action anyway.
 ## Barcodes
 
 The add form looks a barcode up with `GET /foods/barcode/:code` (the household's own food first,
-then Open Food Facts on the server). `BarcodeScanner.jsx` uses the browser's `BarcodeDetector`
-and the back camera when both exist (Chrome on Android); otherwise the digits are typed. The camera
+then Open Food Facts on the server). `BarcodeScanner.jsx` uses the back camera with the browser's
+`BarcodeDetector` when it has one (Chrome on Android), otherwise the `barcode-detector` polyfill
+(ZXing in WebAssembly, iPhone Safari), imported only when scanning starts, with its `.wasm` served
+from our own `/assets/`. The digits can always be typed. The camera
 stops as soon as a code is read or the form closes. nginx allows `camera=(self)`.
+
+## Deploying
+
+GitHub Actions builds the app (`npm run build`, plus `dist/version.txt`) and streams `dist/` as a
+`.tar.gz` over SSH; the server's `foodstorage-deploy` (API repo `deploy/deploy.sh`) unpacks it into
+`/var/www/foodstorage`. Nothing is built on the server.
 
 ## State
 

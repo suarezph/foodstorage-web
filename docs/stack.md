@@ -9,7 +9,9 @@ app, not shared (API repo ADR 0001).
 
 - **Styling:** Tailwind CSS 4 + shadcn/ui (Radix). Theme tokens in `src/index.css`: neutral with
   orange as the brand colour; `negative` (expired), `warning` (soon). System fonts.
-- **Icons:** lucide-react. **Charts:** none yet. **Animation:** Tailwind transitions only.
+- **Icons:** lucide-react. **Charts:** none (bars are plain CSS). **Animation:** Tailwind transitions only.
+- **Barcodes:** the browser's `BarcodeDetector` when it has one, else `barcode-detector` +
+  `zxing-wasm` (WebAssembly, loaded only when scanning; nginx allows `'wasm-unsafe-eval'`).
 
 ## Installed packages
 
@@ -17,19 +19,21 @@ app, not shared (API repo ADR 0001).
 
 ### App
 
-| Package                    | Version | Used for                                         |
-| -------------------------- | ------- | ------------------------------------------------ |
-| `react`                    | 19.3    | UI                                               |
-| `react-dom`                | 19.3    | Rendering                                        |
-| `react-router-dom`         | 7.18    | Routes, filters in the address                   |
-| `@tanstack/react-query`    | 5.105   | Server state (in-memory cache only)              |
-| `react-hook-form`          | 7.91    | Login and password forms                         |
-| `@hookform/resolvers`      | 5.9     | zod with react-hook-form                         |
-| `zod`                      | 4.6     | Form validation                                  |
-| `radix-ui`                 | 1.6     | shadcn/ui primitives (dialog, dropdown, sidebar) |
-| `class-variance-authority` | 0.7     | shadcn/ui variants                               |
-| `cn`                       | 0.4     | Class name merging                               |
-| `lucide-react`             | 1.65    | Icons                                            |
+| Package                    | Version | Used for                                                                  |
+| -------------------------- | ------- | ------------------------------------------------------------------------- |
+| `react`                    | 19.3    | UI                                                                        |
+| `react-dom`                | 19.3    | Rendering                                                                 |
+| `react-router-dom`         | 7.18    | Routes, filters in the address                                            |
+| `@tanstack/react-query`    | 5.105   | Server state (in-memory cache only)                                       |
+| `react-hook-form`          | 7.91    | Login and password forms                                                  |
+| `@hookform/resolvers`      | 5.9     | zod with react-hook-form                                                  |
+| `zod`                      | 4.6     | Form validation                                                           |
+| `radix-ui`                 | 1.6     | shadcn/ui primitives (dialog, dropdown, sidebar)                          |
+| `class-variance-authority` | 0.7     | shadcn/ui variants                                                        |
+| `cn`                       | 0.4     | Class name merging                                                        |
+| `lucide-react`             | 1.65    | Icons                                                                     |
+| `barcode-detector`         | 3.2     | Barcode reading where the browser has none (iPhone), loaded on demand     |
+| `zxing-wasm`               | 3.1     | The WebAssembly reader it uses; its `.wasm` is served from our own origin |
 
 ### Build and tests
 

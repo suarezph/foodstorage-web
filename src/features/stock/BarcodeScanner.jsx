@@ -1,17 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui/index.jsx';
 
-/** Whether this browser can read barcodes from the camera (Chrome on Android, most desktops). */
+/** Whether this browser has a camera to scan with. The barcode reader itself always works. */
 export const canScan = () =>
-  typeof window !== 'undefined' &&
-  'BarcodeDetector' in window &&
-  Boolean(navigator.mediaDevices?.getUserMedia);
+  typeof window !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf'];
 
 /**
- * The camera, looking for a barcode. Calls onCode(digits) once and stops the camera. No library:
- * the browser's own BarcodeDetector (API ADR 0005). Where it is missing, type the digits instead.
+ * The browser's own BarcodeDetector when it reads these formats (Chrome on Android), otherwise the
+ * `barcode-detector` polyfill (ZXing in WebAssembly, for iPhone Safari). The polyfill is loaded
+ * only when scanning starts, and its .wasm file comes from this site, never a CDN (API ADR 0005).
+ */
+async function makeDetector() {
+  if ('BarcodeDetector' in window) {
+    try {
+      const supported = await window.BarcodeDetector.getSupportedFormats();
+      const formats = FORMATS.filter((f) => supported.includes(f));
+      if (formats.length) return new window.BarcodeDetector({ formats });
+    } catch {
+      // fall through to the polyfill
+    }
+  }
+  const [{ BarcodeDetector, prepareZXingModule }, { default: wasmUrl }] = await Promise.all([
+    import('barcode-detector/ponyfill'),
+    import('zxing-wasm/reader/zxing_reader.wasm?url'),
+  ]);
+  prepareZXingModule({
+    overrides: {
+      locateFile: (path, prefix) => (path.endsWith('.wasm') ? wasmUrl : prefix + path),
+    },
+  });
+  return new BarcodeDetector({ formats: FORMATS });
+}
+
+/**
+ * The camera, looking for a barcode. Calls onCode(digits) once and stops the camera. If the camera
+ * cannot start, the digits can be typed instead.
  */
 export function BarcodeScanner({ onCode, onCancel }) {
   const video = useRef(null);
@@ -23,10 +48,7 @@ export function BarcodeScanner({ onCode, onCancel }) {
     let timer;
     (async () => {
       try {
-        const supported = await window.BarcodeDetector.getSupportedFormats();
-        const detector = new window.BarcodeDetector({
-          formats: FORMATS.filter((f) => supported.includes(f)),
-        });
+        const detector = await makeDetector();
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
           audio: false,
