@@ -16,7 +16,7 @@ origin (in development Vite proxies `/api` to `http://localhost:3001`). The API 
 
 | Path               | Who                | What                                                                                                                                                 |
 | ------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`           | anyone             | Username and password                                                                                                                                |
+| `/login`           | anyone             | Username or email, and password                                                                                                                      |
 | `/change-password` | temporary password | Choose your own                                                                                                                                      |
 | `/`                | in a household     | Home: counts (expired, today, next 3 days, this week), "Use these first", "What can I cook?"; `?add=1` opens Add food (the installed app's shortcut) |
 | `/storage`         | in a household     | Everything, most urgent first; `?place=`, `?status=`, `?urgency=`                                                                                    |
@@ -25,7 +25,7 @@ origin (in development Vite proxies `/api` to `http://localhost:3001`). The API 
 | `/waste`           | in a household     | Waste report: thrown away against eaten, why, what, per month                                                                                        |
 | `/household`       | in a household     | People; places and categories (managers change them)                                                                                                 |
 | `/admin`           | admin              | Households and people: create, roles, move, disable, reset password                                                                                  |
-| `/settings`        | everyone           | You, notifications (this device, hour, test), theme, password, sign out                                                                              |
+| `/settings`        | everyone           | You (with email), daily summary (on/off, hour, by email and/or push on this device, tests), theme, password, sign out                                |
 
 Someone without a household sees "You are not in a household yet"; an admin without one is sent
 to `/admin`. Buttons a role cannot use are hidden (`can(user, role)` in `src/lib/food.js`); the API
@@ -36,6 +36,9 @@ checks every action anyway.
 - `public/manifest.webmanifest` (name, icons, shortcuts) and `public/sw.js`, registered in
   `main.jsx`. The service worker caches nothing; it only shows push messages and opens the app at
   the message's `url` when one is tapped.
+- The daily summary can also come by email (API ADR 0007). The Settings card shows both ways:
+  "Email it to …" with a test email, and push for this device. Which ways the server supports
+  comes from `GET /push/settings` (`available`).
 - `src/lib/push.js`: `pushSupport()` (`ok`, `ios-install`, `unsupported`, `denied`),
   `turnOnPush(publicKey)` (permission, `pushManager.subscribe`, `POST /push/subscriptions`) and
   `turnOffPush()` (this device only). On iPhone push needs the app on the Home Screen, and the
@@ -70,7 +73,7 @@ src/features/stock    Storage, Freezer, add form (barcode), item dialog (use, op
 src/features/shopping shopping list
 src/features/reports  waste report
 src/features/household household page, places and categories hooks
-src/features/admin    households and people
+src/features/admin    households and people (with email; add one to older accounts)
 src/features/settings settings, notifications card
 src/lib/              api client, food.js (wording, roles, units), push.js, theme
 public/               sw.js, manifest, icons, theme.js

@@ -45,12 +45,14 @@ describe('Households & people', () => {
 
     await userEvent.type(screen.getByLabelText('Name'), 'Mia');
     await userEvent.type(screen.getByLabelText('Username'), 'mia');
+    await userEvent.type(screen.getByLabelText('Email'), 'mia@example.com');
     await userEvent.selectOptions(screen.getByLabelText('Household'), 'Suarez Family Food Storage');
     await userEvent.selectOptions(screen.getByLabelText('Role in the household'), 'viewer');
     await userEvent.click(screen.getByRole('button', { name: 'Add person' }));
 
     expect(calls.find((c) => c.path === '/admin/users' && c.method === 'POST').body).toEqual({
       username: 'mia',
+      email: 'mia@example.com',
       name: 'Mia',
       role: 'user',
       householdId: 'h1',
@@ -60,6 +62,36 @@ describe('Households & people', () => {
     expect(within(shown).getByText('Hk7m-Q2xP-9tRw-aB4n')).toBeInTheDocument();
     await userEvent.click(within(shown).getByRole('button', { name: 'Done' }));
     expect(screen.queryByText('Hk7m-Q2xP-9tRw-aB4n')).not.toBeInTheDocument();
+    expect(screen.getByText('mia@example.com')).toBeInTheDocument();
+  });
+
+  it('adds an email to an older account without one', async () => {
+    const people = [
+      {
+        id: 'u1',
+        username: 'alex',
+        email: null,
+        name: 'Alex',
+        role: 'admin',
+        household: null,
+        householdRole: null,
+        disabledAt: null,
+        mustChangePassword: false,
+      },
+    ];
+    const calls = mockApi({
+      ...signedIn(userWith({ role: 'admin', household: null, householdRole: null })),
+      'GET /admin/households': () => [],
+      'GET /admin/users': () => people,
+      'PATCH /admin/users/u1': (body) => Object.assign(people[0], body),
+    });
+    renderApp('/admin');
+    expect(await screen.findByText('No email yet')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Add email' }));
+    await userEvent.type(screen.getByLabelText("Alex's email"), 'alex@example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(calls.find((c) => c.method === 'PATCH').body).toEqual({ email: 'alex@example.com' });
+    expect(await screen.findByText('alex@example.com')).toBeInTheDocument();
   });
 
   it('puts the admin in a household as a manager', async () => {

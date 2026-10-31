@@ -8,7 +8,7 @@ import { Button, ErrorNotice, Field, Input } from '../../components/ui/index.jsx
 import { AuthShell } from './AuthShell.jsx';
 
 const schema = z.object({
-  username: z.string().trim().min(1, 'Enter your username'),
+  username: z.string().trim().min(1, 'Enter your username or email'),
   password: z.string().min(1, 'Enter your password'),
 });
 
@@ -40,12 +40,12 @@ export function LoginPage() {
   return (
     <AuthShell
       title="UseFirst"
-      subtitle="Sign in with the username you were given."
+      subtitle="Sign in with your username or email."
       footer="Accounts are made by the person who manages UseFirst. There is no sign-up."
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
         {serverError && <ErrorNotice error={serverError} />}
-        <Field label="Username" error={errors.username?.message}>
+        <Field label="Username or email" error={errors.username?.message}>
           {(p) => (
             <Input
               autoComplete="username"

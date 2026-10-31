@@ -26,7 +26,7 @@ describe('signing in', () => {
       'GET /stock/summary': () => summary,
     });
     renderApp('/');
-    await userEvent.type(await screen.findByLabelText('Username'), 'alex');
+    await userEvent.type(await screen.findByLabelText('Username or email'), 'alex');
     await userEvent.type(screen.getByLabelText('Password'), 'correct horse battery');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByRole('heading', { name: 'Hi, Alex' })).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe('signing in', () => {
       }),
     });
     renderApp('/login');
-    await userEvent.type(await screen.findByLabelText('Username'), 'alex');
+    await userEvent.type(await screen.findByLabelText('Username or email'), 'alex');
     await userEvent.type(screen.getByLabelText('Password'), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByText('Incorrect username or password')).toBeInTheDocument();
