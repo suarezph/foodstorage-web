@@ -1,6 +1,6 @@
-# Food Storage Web
+# UseFirst Web
 
-The web app for Food Storage: what food your household has, where it is, and what to use first.
+The web app for UseFirst: what food your household has, where it is, and what to use first.
 
 - API and its contract: [`foodstorage-api`](https://github.com/suarezph/foodstorage-api)
 - How the app is put together: [`docs/architecture.md`](docs/architecture.md)

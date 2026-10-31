@@ -12,7 +12,7 @@ const hourText = (h) =>
 
 const WHY_NOT = {
   'ios-install':
-    'On iPhone, notifications work once Food Storage is on your Home Screen: tap Share, then "Add to Home Screen", and open it from there.',
+    'On iPhone, notifications work once UseFirst is on your Home Screen: tap Share, then "Add to Home Screen", and open it from there.',
   unsupported: 'This browser cannot show notifications.',
   denied:
     'Notifications are blocked for this site. Allow them in the browser settings, then reload.',

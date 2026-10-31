@@ -1,4 +1,4 @@
-// Food Storage service worker: shows push notifications (API ADR 0004) and opens the app when one
+// UseFirst service worker: shows push notifications (API ADR 0004) and opens the app when one
 // is tapped. It caches nothing: the app always loads fresh from the server.
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -12,7 +12,7 @@ self.addEventListener('push', (event) => {
     msg = { body: event.data?.text() };
   }
   event.waitUntil(
-    self.registration.showNotification(msg.title || 'Food Storage', {
+    self.registration.showNotification(msg.title || 'UseFirst', {
       body: msg.body || '',
       tag: msg.tag || 'food-storage',
       icon: '/icon-192.png',

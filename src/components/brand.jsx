@@ -1,7 +1,7 @@
 import { cn } from 'cn';
 
 /**
- * The Food Storage mark: a fridge, black on orange. Same drawing as public/favicon.svg; colours
+ * The UseFirst mark: a fridge, black on orange. Same drawing as public/favicon.svg; colours
  * come from the --brand tokens so it never changes with the theme.
  */
 export function BrandMark({ className }) {

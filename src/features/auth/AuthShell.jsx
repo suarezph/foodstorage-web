@@ -7,7 +7,7 @@ export function AuthShell({ title, subtitle, children, footer }) {
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <BrandMark className="size-12 rounded-xl" />
-          <span className="sr-only">Food Storage</span>
+          <span className="sr-only">UseFirst</span>
           <h1 className="text-xl font-bold">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         </div>

@@ -1,6 +1,6 @@
 {
-  "name": "Food Storage",
-  "short_name": "Food",
+  "name": "UseFirst",
+  "short_name": "UseFirst",
   "description": "What food you have, where it is, and what to use first.",
   "id": "/",
   "start_url": "/",

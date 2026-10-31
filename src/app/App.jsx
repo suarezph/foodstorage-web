@@ -40,7 +40,7 @@ function RequireHousehold({ children }) {
   if (user.role === 'admin') return <Navigate to="/admin" replace />;
   return (
     <EmptyState title="You are not in a household yet">
-      Ask the person who manages Food Storage to add you to your household.
+      Ask the person who manages UseFirst to add you to your household.
     </EmptyState>
   );
 }
