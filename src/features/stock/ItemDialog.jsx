@@ -10,7 +10,7 @@ import {
   Spinner,
 } from '../../components/ui/index.jsx';
 import { can, formatDay, formatQuantity, UNITS } from '../../lib/food.js';
-import { usePlaces } from '../household/hooks.js';
+import { useHousehold, usePlaces } from '../household/hooks.js';
 import { useAction, useDeleteItem, useEditFood, useEditItem, useItem } from './hooks.js';
 import { UrgencyBadge } from './StockRow.jsx';
 
@@ -37,9 +37,15 @@ function Facts({ item }) {
     ['Kept in', item.place.name],
     ['Category', item.food.category?.name ?? 'None'],
     [
-      item.dateKind === 'best_before' ? 'Best before' : 'Use by',
+      item.food.kind === 'medicine'
+        ? 'Expires'
+        : item.dateKind === 'best_before'
+          ? 'Best before'
+          : 'Use by',
       `${formatDay(item.expiresOn)}${item.expiresEstimated ? ' (estimated)' : ''}`,
     ],
+    item.food.kind === 'medicine' && ['For', item.forUser?.name ?? 'Anyone'],
+    item.food.doseNote && ['Dose', item.food.doseNote],
     item.openedOn && [
       'Opened',
       `${formatDay(item.openedOn)}${item.openedExpiresOn ? `, use by ${formatDay(item.openedExpiresOn)}` : ''}`,
@@ -94,6 +100,9 @@ export function ItemDialog({ id, onClose }) {
   const [shop, setShop] = useState(false);
 
   const isMember = can(user, 'member');
+  const medicine = item?.food.kind === 'medicine';
+  const household = useHousehold();
+  const members = household.data?.members ?? [];
   const isManager = can(user, 'manager');
   const active = item?.status === 'active';
   const busy = action.isPending || edit.isPending || del.isPending || editFood.isPending;
@@ -136,9 +145,16 @@ export function ItemDialog({ id, onClose }) {
         <div className="space-y-5">
           <div className="flex items-center gap-2">
             <UrgencyBadge item={item} />
-            {item.dateKind === 'use_by' && item.urgency?.level === 'expired' && (
-              <span className="text-sm font-medium text-negative">Do not eat</span>
-            )}
+            {item.urgency?.level === 'expired' &&
+              (item.food.kind === 'medicine' ? (
+                <span className="text-sm font-medium text-negative">
+                  Do not use. Dispose of it safely (a pharmacy can take it back).
+                </span>
+              ) : (
+                item.dateKind === 'use_by' && (
+                  <span className="text-sm font-medium text-negative">Do not eat</span>
+                )
+              ))}
           </div>
           <Facts item={item} />
           {fail && <ErrorNotice error={fail} />}
@@ -182,6 +198,8 @@ export function ItemDialog({ id, onClose }) {
                       quantity: String(item.quantity),
                       unit: item.unit,
                       expiresOn: item.expiresOn,
+                      forUserId: item.forUser?.id ?? '',
+                      doseNote: item.food.doseNote ?? '',
                     })
                   }
                 >
@@ -387,6 +405,12 @@ export function ItemDialog({ id, onClose }) {
                     quantity: Number(value.quantity),
                     unit: value.unit,
                     ...(value.expiresOn ? { expiresOn: value.expiresOn } : {}),
+                    ...(medicine
+                      ? {
+                          forUserId: value.forUserId || null,
+                          doseNote: value.doseNote.trim() || null,
+                        }
+                      : {}),
                   });
                   setMode(null);
                 } catch {
@@ -442,6 +466,36 @@ export function ItemDialog({ id, onClose }) {
                   />
                 )}
               </Field>
+              {medicine && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="For">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        value={value.forUserId}
+                        onChange={(e) => setValue((v) => ({ ...v, forUserId: e.target.value }))}
+                      >
+                        <option value="">Anyone</option>
+                        {members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                  <Field label="Dose">
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={value.doseNote}
+                        maxLength={200}
+                        onChange={(e) => setValue((v) => ({ ...v, doseNote: e.target.value }))}
+                      />
+                    )}
+                  </Field>
+                </div>
+              )}
               <div className="flex flex-wrap justify-between gap-2">
                 <Button
                   variant="ghost"

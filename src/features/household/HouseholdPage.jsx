@@ -110,19 +110,22 @@ const DAY_FIELDS = [
   ['openedDays', 'Once opened'],
 ];
 
-const toForm = (c) =>
-  Object.fromEntries(DAY_FIELDS.map(([k]) => [k, c[k] === null ? '' : String(c[k])]));
+// Medicine always has its printed date: only "once opened" applies (ADR 0008).
+const MEDICINE_FIELDS = [['openedDays', 'Once opened']];
+
+const toForm = (c, fields) =>
+  Object.fromEntries(fields.map(([k]) => [k, c[k] === null ? '' : String(c[k])]));
 const toDays = (v) => (v.trim() === '' ? null : Number(v));
 
-function CategoryRow({ category, manage, save }) {
-  const [form, setForm] = useState(() => toForm(category));
-  const dirty = DAY_FIELDS.some(([k]) => toDays(form[k]) !== category[k]);
+function CategoryRow({ category, manage, save, fields }) {
+  const [form, setForm] = useState(() => toForm(category, fields));
+  const dirty = fields.some(([k]) => toDays(form[k]) !== category[k]);
   return (
     <tr className="border-t">
       <th scope="row" className="py-2 pr-2 text-left font-normal">
         {category.name}
       </th>
-      {DAY_FIELDS.map(([k, label]) => (
+      {fields.map(([k, label]) => (
         <td key={k} className="w-20 px-1 py-1">
           {manage ? (
             <Input
@@ -149,7 +152,7 @@ function CategoryRow({ category, manage, save }) {
             onClick={() =>
               save.mutate({
                 id: category.id,
-                ...Object.fromEntries(DAY_FIELDS.map(([k]) => [k, toDays(form[k])])),
+                ...Object.fromEntries(fields.map(([k]) => [k, toDays(form[k])])),
               })
             }
           >
@@ -170,15 +173,18 @@ function CategoryRow({ category, manage, save }) {
   );
 }
 
-function Categories({ manage }) {
-  const { data: categories = [] } = useCategories();
+function Categories({ manage, kind = 'food' }) {
+  const { data: all = [] } = useCategories();
+  const categories = all.filter((c) => (c.kind ?? 'food') === kind);
+  const fields = kind === 'medicine' ? MEDICINE_FIELDS : DAY_FIELDS;
   const save = useSave('categories');
   const [name, setName] = useState('');
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        How many days food keeps when the package has no date, by place, and once opened. Empty
-        means no default. A printed date always wins.
+        {kind === 'medicine'
+          ? 'Medicine always needs the date printed on it. Some keep only a short time once opened (eye drops: 28 days); empty means no limit.'
+          : 'How many days food keeps when the package has no date, by place, and once opened. Empty means no default. A printed date always wins.'}
       </p>
       {save.error && <ErrorNotice error={save.error} />}
       <div className="overflow-x-auto">
@@ -186,7 +192,7 @@ function Categories({ manage }) {
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="py-1 font-medium">Category</th>
-              {DAY_FIELDS.map(([k, label]) => (
+              {fields.map(([k, label]) => (
                 <th key={k} className="w-20 px-1 py-1 text-right font-medium whitespace-nowrap">
                   {label}
                 </th>
@@ -202,10 +208,11 @@ function Categories({ manage }) {
           <tbody>
             {categories.map((c) => (
               <CategoryRow
-                key={`${c.id}-${DAY_FIELDS.map(([k]) => c[k]).join('-')}`}
+                key={`${c.id}-${fields.map(([k]) => c[k]).join('-')}`}
                 category={c}
                 manage={manage}
                 save={save}
+                fields={fields}
               />
             ))}
           </tbody>
@@ -217,12 +224,12 @@ function Categories({ manage }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (!name.trim()) return;
-            save.mutate({ name: name.trim() }, { onSuccess: () => setName('') });
+            save.mutate({ kind, name: name.trim() }, { onSuccess: () => setName('') });
           }}
         >
           <Input
-            aria-label="New category"
-            placeholder="Kimchi"
+            aria-label={kind === 'medicine' ? 'New medicine category' : 'New category'}
+            placeholder={kind === 'medicine' ? 'Inhalers' : 'Kimchi'}
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
@@ -261,9 +268,15 @@ export function HouseholdPage() {
           <Places manage={manage} />
         </Card>
         <Card className="lg:col-span-2">
-          <h2 className="mb-2 font-semibold">Categories</h2>
+          <h2 className="mb-2 font-semibold">Food categories</h2>
           <Categories manage={manage} />
         </Card>
+        {can(user, 'member') && (
+          <Card className="lg:col-span-2">
+            <h2 className="mb-2 font-semibold">Medicine categories</h2>
+            <Categories manage={manage} kind="medicine" />
+          </Card>
+        )}
       </div>
     </>
   );

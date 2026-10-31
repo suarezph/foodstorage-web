@@ -86,18 +86,21 @@ export function StoragePage() {
         >
           All
         </button>
-        {places.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className={chip(placeId === p.id)}
-            aria-pressed={placeId === p.id}
-            onClick={() => setParam('place', p.id)}
-          >
-            {p.name}
-            {status === 'active' && <span className="ml-1 opacity-70">{p.activeCount}</span>}
-          </button>
-        ))}
+        {/* Medicine has its own page (ADR 0008): the cabinet is not a food place. */}
+        {places
+          .filter((p) => p.kind !== 'cabinet')
+          .map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className={chip(placeId === p.id)}
+              aria-pressed={placeId === p.id}
+              onClick={() => setParam('place', p.id)}
+            >
+              {p.name}
+              {status === 'active' && <span className="ml-1 opacity-70">{p.activeCount}</span>}
+            </button>
+          ))}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

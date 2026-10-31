@@ -1,8 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api/client.js';
 
-export const useSummary = () =>
-  useQuery({ queryKey: ['stock', 'summary'], queryFn: () => api('/stock/summary') });
+/** Counts and what needs attention; `kind` = 'food' (default) or 'medicine' (ADR 0008). */
+export const useSummary = (kind = 'food', { enabled = true } = {}) =>
+  useQuery({
+    queryKey: ['stock', 'summary', kind],
+    queryFn: () => api('/stock/summary', { query: { kind } }),
+    enabled,
+  });
 
 export const useStock = (filters) =>
   useQuery({
@@ -17,7 +22,8 @@ export const useItem = (id) =>
     enabled: Boolean(id),
   });
 
-export const useFoods = () => useQuery({ queryKey: ['foods'], queryFn: () => api('/foods') });
+export const useFoods = (kind = 'food') =>
+  useQuery({ queryKey: ['foods', kind], queryFn: () => api('/foods', { query: { kind } }) });
 
 /**
  * Everything that changes food: lists, the summary, places' counts, food names and the shopping
@@ -55,4 +61,5 @@ export const useEditFood = () =>
   useStockMutation(({ id, ...body }) => api(`/foods/${id}`, { method: 'PATCH', body }));
 
 /** A scanned barcode: the household's food, or a name from Open Food Facts. */
-export const lookupBarcode = (code) => api(`/foods/barcode/${code}`);
+export const lookupBarcode = (code, kind = 'food') =>
+  api(`/foods/barcode/${code}`, { query: { kind } });

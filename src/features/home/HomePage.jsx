@@ -14,6 +14,7 @@ import {
 import { can } from '../../lib/food.js';
 import { AddFoodDialog } from '../stock/AddFoodDialog.jsx';
 import { useSummary } from '../stock/hooks.js';
+import { MedicineNotice } from './MedicineNotice.jsx';
 import { ItemDialog } from '../stock/ItemDialog.jsx';
 import { GettingStarted } from './GettingStarted.jsx';
 import { IdeasDialog } from './IdeasDialog.jsx';
@@ -80,6 +81,7 @@ export function HomePage() {
     <div className="space-y-4">
       {header}
       <GettingStarted user={user} total={counts.total} onAddFood={() => setAdding(true)} />
+      {can(user, 'member') && <MedicineNotice />}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {TILES.map(([level, label, tone]) => (
           <Link

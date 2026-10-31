@@ -1,6 +1,8 @@
+import { can } from '../lib/food.js';
 import {
   ChartColumn,
   House,
+  Pill,
   Refrigerator,
   Settings,
   ShieldCheck,
@@ -17,7 +19,7 @@ export const NAV_GROUPS = [
 
 /**
  * Every page in the app shell; the sidebar and breadcrumb read this list. `household: true` pages
- * need a household; `adminOnly` pages need the admin role.
+ * need a household; `adminOnly` pages need the admin role; `minRole` a household role.
  */
 export const NAV = [
   { to: '/', label: 'Home', icon: House, group: 'food', household: true },
@@ -25,6 +27,15 @@ export const NAV = [
   { to: '/freezer', label: 'Freezer', icon: Snowflake, group: 'food', household: true },
   { to: '/shopping', label: 'Shopping list', icon: ShoppingCart, group: 'food', household: true },
   { to: '/waste', label: 'Waste', icon: ChartColumn, group: 'food', household: true },
+  // Not for viewers (young children); the API refuses them too (ADR 0008).
+  {
+    to: '/medicine',
+    label: 'Medicine',
+    icon: Pill,
+    group: 'food',
+    household: true,
+    minRole: 'member',
+  },
   { to: '/household', label: 'Household', icon: Users, group: 'food', household: true },
   {
     to: '/admin',
@@ -44,5 +55,8 @@ export const pageFor = (pathname) =>
 
 export const visibleNav = (user) =>
   NAV.filter(
-    (n) => (!n.adminOnly || user?.role === 'admin') && (!n.household || Boolean(user?.household)),
+    (n) =>
+      (!n.adminOnly || user?.role === 'admin') &&
+      (!n.household || Boolean(user?.household)) &&
+      (!n.minRole || can(user, n.minRole)),
   );

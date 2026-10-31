@@ -3,7 +3,7 @@ import { useCallback, useId, useState } from 'react';
 import { z } from 'zod';
 import { Button, Dialog, ErrorNotice, Field, Input, Select } from '../../components/ui/index.jsx';
 import { addDaysIso, defaultDays, formatDay, localIso, UNITS } from '../../lib/food.js';
-import { useCategories, usePlaces } from '../household/hooks.js';
+import { useCategories, useHousehold, usePlaces } from '../household/hooks.js';
 import { BarcodeScanner, canScan } from './BarcodeScanner.jsx';
 import { lookupBarcode, useAddFood, useFoods } from './hooks.js';
 
@@ -24,6 +24,8 @@ const blank = (placeId = '') => ({
   expiresOn: '',
   notes: '',
   barcode: '',
+  forUserId: '',
+  doseNote: '',
 });
 
 const BARCODE = /^[0-9]{8,14}$/;
@@ -48,11 +50,21 @@ function withName(foods, f, name) {
  * remembered once added. Without a printed date the category's default is used, and the form says
  * which date that will be. `prefill` ({ name }) opens it filled in (putting away a bought shopping
  * item); `onAdded(item)` is told about each batch added.
+ *
+ * `kind="medicine"` (ADR 0008): "Add medicine", medicine categories, the cabinet first, the
+ * printed expiry date always, who it is for and a dose note; barcodes only from the household.
  */
-export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded }) {
-  const { data: places = [] } = usePlaces();
-  const { data: categories = [] } = useCategories();
-  const { data: foods = [] } = useFoods();
+export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded, kind = 'food' }) {
+  const medicine = kind === 'medicine';
+  const { data: allPlaces = [] } = usePlaces();
+  const { data: allCategories = [] } = useCategories();
+  const { data: foods = [] } = useFoods(kind);
+  const household = useHousehold();
+  const members = medicine ? (household.data?.members ?? []) : [];
+  // Medicine: the cabinet first. Food: the cabinet last. Otherwise the household's own order.
+  const cabinetRank = (p) => (p.kind === 'cabinet' ? (medicine ? -1 : 1) : 0);
+  const places = [...allPlaces].sort((a, b) => cabinetRank(a) - cabinetRank(b));
+  const categories = allCategories.filter((c) => (c.kind ?? 'food') === kind);
   const add = useAddFood();
   const listId = useId();
   // `prefill` is read when the dialog mounts: the shopping list mounts it per item.
@@ -77,40 +89,43 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
 
   const onName = (e) => setForm((f) => withName(foods, f, e.target.value));
 
-  const lookUp = useCallback(async (code) => {
-    setScanning(false);
-    setForm((f) => ({ ...f, barcode: code }));
-    if (!BARCODE.test(code)) {
-      setFound({ text: 'A barcode is 8 to 14 digits.', error: true });
-      return;
-    }
-    setLooking(true);
-    try {
-      const r = await lookupBarcode(code);
-      if (r.food) {
-        setForm((f) => ({
-          ...f,
-          barcode: code,
-          name: r.food.name,
-          categoryId: r.food.category?.id ?? '',
-          unit: r.food.unit,
-          placeId: r.food.lastPlaceId ?? f.placeId,
-        }));
-        setFound({ text: `${r.food.name}: you have had this before.` });
-      } else if (r.product) {
-        setForm((f) => ({ ...f, barcode: code, name: r.product.name }));
-        setFound({
-          text: `Found: ${[r.product.brand, r.product.quantity].filter(Boolean).join(', ') || r.product.name}. Check the name and pick a category.`,
-        });
-      } else {
-        setFound({ text: 'Not found. Type the name: this barcode will be remembered.' });
+  const lookUp = useCallback(
+    async (code) => {
+      setScanning(false);
+      setForm((f) => ({ ...f, barcode: code }));
+      if (!BARCODE.test(code)) {
+        setFound({ text: 'A barcode is 8 to 14 digits.', error: true });
+        return;
       }
-    } catch (err) {
-      setFound({ text: err.message, error: true });
-    } finally {
-      setLooking(false);
-    }
-  }, []);
+      setLooking(true);
+      try {
+        const r = await lookupBarcode(code, kind);
+        if (r.food) {
+          setForm((f) => ({
+            ...f,
+            barcode: code,
+            name: r.food.name,
+            categoryId: r.food.category?.id ?? '',
+            unit: r.food.unit,
+            placeId: r.food.lastPlaceId ?? f.placeId,
+          }));
+          setFound({ text: `${r.food.name}: you have had this before.` });
+        } else if (r.product && !medicine) {
+          setForm((f) => ({ ...f, barcode: code, name: r.product.name }));
+          setFound({
+            text: `Found: ${[r.product.brand, r.product.quantity].filter(Boolean).join(', ') || r.product.name}. Check the name and pick a category.`,
+          });
+        } else {
+          setFound({ text: 'Not found. Type the name: this barcode will be remembered.' });
+        }
+      } catch (err) {
+        setFound({ text: err.message, error: true });
+      } finally {
+        setLooking(false);
+      }
+    },
+    [kind, medicine],
+  );
 
   const close = () => {
     setForm(blank(defaultPlaceId ?? ''));
@@ -129,7 +144,7 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
       setErrors(Object.fromEntries(parsed.error.issues.map((i) => [i.path[0], i.message])));
       return;
     }
-    if (!form.expiresOn && !estimate) {
+    if (!form.expiresOn && (medicine || !estimate)) {
       setErrors({ expiresOn: 'Enter the date on the package' });
       return;
     }
@@ -141,8 +156,15 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
         placeId,
         quantity: parsed.data.quantity,
         unit: parsed.data.unit,
-        dateKind: form.dateKind,
+        dateKind: medicine ? 'use_by' : form.dateKind,
         ...(form.expiresOn ? { expiresOn: form.expiresOn } : {}),
+        ...(medicine
+          ? {
+              kind,
+              ...(form.forUserId ? { forUserId: form.forUserId } : {}),
+              ...(form.doseNote.trim() ? { doseNote: form.doseNote.trim() } : {}),
+            }
+          : {}),
         ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
         ...(BARCODE.test(form.barcode) ? { barcode: form.barcode } : {}),
       });
@@ -158,7 +180,7 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
   };
 
   return (
-    <Dialog open={open} onClose={close} title="Add food">
+    <Dialog open={open} onClose={close} title={medicine ? 'Add medicine' : 'Add food'}>
       <form onSubmit={(e) => submit(e, false)} noValidate className="space-y-4">
         {add.error && <ErrorNotice error={add.error} />}
         {added && (
@@ -217,7 +239,7 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
                 list={listId}
                 value={form.name}
                 onChange={onName}
-                placeholder="Fresh milk"
+                placeholder={medicine ? 'Paracetamol syrup' : 'Fresh milk'}
                 autoComplete="off"
               />
               <datalist id={listId}>
@@ -286,41 +308,79 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded 
           </Field>
         </div>
 
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">The date on the package says</legend>
-          <div className="flex gap-4 text-sm">
-            {[
-              ['use_by', 'Use by'],
-              ['best_before', 'Best before'],
-            ].map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="dateKind"
-                  value={value}
-                  checked={form.dateKind === value}
-                  onChange={set('dateKind')}
-                  className="accent-primary"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        {!medicine && (
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">The date on the package says</legend>
+            <div className="flex gap-4 text-sm">
+              {[
+                ['use_by', 'Use by'],
+                ['best_before', 'Best before'],
+              ].map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="dateKind"
+                    value={value}
+                    checked={form.dateKind === value}
+                    onChange={set('dateKind')}
+                    className="accent-primary"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         <Field
-          label={form.dateKind === 'best_before' ? 'Best before' : 'Use by'}
+          label={
+            medicine
+              ? 'Expires (EXP on the box)'
+              : form.dateKind === 'best_before'
+                ? 'Best before'
+                : 'Use by'
+          }
           error={errors.expiresOn}
           hint={
             form.expiresOn
               ? undefined
-              : estimate
-                ? `Leave empty to use ${category.name} in the ${place.name.toLowerCase()}: about ${days} days, until ${formatDay(estimate)}.`
-                : 'No printed date? Pick a category with a default for this place, or enter a date.'
+              : medicine
+                ? 'Medicine always needs the date printed on it.'
+                : estimate
+                  ? `Leave empty to use ${category.name} in the ${place.name.toLowerCase()}: about ${days} days, until ${formatDay(estimate)}.`
+                  : 'No printed date? Pick a category with a default for this place, or enter a date.'
           }
         >
           {(p) => <Input {...p} type="date" value={form.expiresOn} onChange={set('expiresOn')} />}
         </Field>
+
+        {medicine && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="For (optional)">
+              {(p) => (
+                <Select {...p} value={form.forUserId} onChange={set('forUserId')}>
+                  <option value="">Anyone</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field label="Dose (optional)" hint="As written on the box. Never checked by the app.">
+              {(p) => (
+                <Input
+                  {...p}
+                  value={form.doseNote}
+                  onChange={set('doseNote')}
+                  maxLength={200}
+                  placeholder="5 ml every 6 hours"
+                />
+              )}
+            </Field>
+          </div>
+        )}
 
         <Field label="Notes (optional)">
           {(p) => (

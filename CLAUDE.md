@@ -23,6 +23,7 @@ technical names nobody sees, and renaming them would mean a migration for no gai
 | Installable app (manifest, service worker), daily summary by push and/or email, settings card        | **Built** |
 | Barcode scan (also iPhone) or type, shopping list with Put away, staples, waste report, freezer view | **Built** |
 | "What can I cook?" and a Getting started checklist on Home                                           | **Built** |
+| Medicine section (members and managers): 14-day flag, cabinet, for whom, dose note (API ADR 0008)    | **Built** |
 | Production: https://usefirst.alexjohnsuarez.com, deployed by CI on push to main (with the API)       | **Live**  |
 
 Tests: `npm test` (fake API on `fetch`, never the network; plus a check that docs/stack.md matches package.json).
@@ -49,6 +50,8 @@ Run the API first (`foodstorage-api`: `npm run dev`). Create the first admin the
 - **No sign-up UI, ever, without an ADR.**
 - **Dates from the API are plain `YYYY-MM-DD`**; urgency comes from the API (the household's time
   zone). Word it with `lib/food.js`: use by = "do not eat" when expired, best before = "check it".
+- **Medicine is not for viewers**: nav `minRole: "member"` and the route guard hide it; the API
+  refuses anyway. Never show a dose as advice: it is the family's own note.
 - **Never colour alone**: urgency badges always carry words.
 - No `dangerouslySetInnerHTML`, no `eval`, no third-party scripts.
 - **The service worker caches nothing** (no stale app after a deploy). It shows push messages and
