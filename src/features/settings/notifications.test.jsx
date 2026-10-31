@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockApi, renderApp, signedIn } from '../../test/render.jsx';
+import { mockApi, renderApp, signedIn, userWith } from '../../test/render.jsx';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -79,5 +79,16 @@ describe('Notifications settings', () => {
     });
     renderApp('/settings');
     expect(await screen.findByText(/Your account has no email address/)).toBeInTheDocument();
+  });
+
+  it('shows test buttons to managers only', async () => {
+    mockApi({
+      ...signedIn(userWith({ householdRole: 'member' })),
+      'GET /push/key': () => ({ enabled: true, publicKey: 'BKey' }),
+      'GET /push/settings': () => settings,
+    });
+    renderApp('/settings');
+    expect(await screen.findByLabelText('Email it to alex@example.com')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send a test email' })).not.toBeInTheDocument();
   });
 });

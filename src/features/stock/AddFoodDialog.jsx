@@ -28,19 +28,39 @@ const blank = (placeId = '') => ({
 
 const BARCODE = /^[0-9]{8,14}$/;
 
+/** A name the household had before brings its category, unit and usual place. */
+function withName(foods, f, name) {
+  const known = foods.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
+  return known
+    ? {
+        ...f,
+        name,
+        categoryId: known.category?.id ?? '',
+        unit: known.unit,
+        placeId: known.lastPlaceId ?? f.placeId,
+      }
+    : { ...f, name };
+}
+
 /**
  * Add food in a few taps. Typing a name the household had before, or scanning its barcode, fills in
  * its category, unit and place. An unknown barcode gets its name from Open Food Facts and is
  * remembered once added. Without a printed date the category's default is used, and the form says
- * which date that will be.
+ * which date that will be. `prefill` ({ name }) opens it filled in (putting away a bought shopping
+ * item); `onAdded(item)` is told about each batch added.
  */
-export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
+export function AddFoodDialog({ open, onClose, defaultPlaceId, prefill, onAdded }) {
   const { data: places = [] } = usePlaces();
   const { data: categories = [] } = useCategories();
   const { data: foods = [] } = useFoods();
   const add = useAddFood();
   const listId = useId();
-  const [form, setForm] = useState(() => blank(defaultPlaceId ?? ''));
+  // `prefill` is read when the dialog mounts: the shopping list mounts it per item.
+  const [form, setForm] = useState(() =>
+    prefill?.name
+      ? withName(foods, blank(defaultPlaceId ?? ''), prefill.name)
+      : blank(defaultPlaceId ?? ''),
+  );
   const [errors, setErrors] = useState({});
   const [added, setAdded] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -55,21 +75,7 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const onName = (e) => {
-    const name = e.target.value;
-    const known = foods.find((f) => f.name.toLowerCase() === name.trim().toLowerCase());
-    setForm((f) =>
-      known
-        ? {
-            ...f,
-            name,
-            categoryId: known.category?.id ?? '',
-            unit: known.unit,
-            placeId: known.lastPlaceId ?? f.placeId,
-          }
-        : { ...f, name },
-    );
-  };
+  const onName = (e) => setForm((f) => withName(foods, f, e.target.value));
 
   const lookUp = useCallback(async (code) => {
     setScanning(false);
@@ -140,6 +146,7 @@ export function AddFoodDialog({ open, onClose, defaultPlaceId }) {
         ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
         ...(BARCODE.test(form.barcode) ? { barcode: form.barcode } : {}),
       });
+      onAdded?.(item);
       if (again) {
         setAdded(item);
         setFound(null);

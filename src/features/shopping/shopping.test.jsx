@@ -63,6 +63,41 @@ describe('Shopping list', () => {
     expect(calls.some((c) => c.path === '/shopping/clear-done')).toBe(true);
   });
 
+  it('puts a bought item away: Add food opens filled in, then it leaves the list', async () => {
+    const calls = mockApi({
+      ...signedIn(),
+      'GET /foods': () => [
+        {
+          id: 'f1',
+          name: 'Fresh milk',
+          unit: 'carton',
+          category: { id: 'c1', name: 'Dairy' },
+          lastPlaceId: 'p1',
+        },
+      ],
+      'GET /shopping': () => ({
+        items: [entry({ name: 'Fresh milk', foodId: 'f1', done: true })],
+        suggestions: [],
+      }),
+      'POST /stock': (body) => item({ food: { id: 'f1', name: body.name, category: null } }),
+      'DELETE /shopping/l1': () => null,
+    });
+    renderApp('/shopping');
+    await userEvent.click(await screen.findByRole('button', { name: 'Put away' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByLabelText('What is it?')).toHaveValue('Fresh milk');
+    expect(within(dialog).getByLabelText('Category')).toHaveValue('c1');
+    expect(within(dialog).getByLabelText('Unit')).toHaveValue('carton');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    expect(calls.find((c) => c.path === '/stock' && c.method === 'POST').body).toMatchObject({
+      name: 'Fresh milk',
+      categoryId: 'c1',
+      placeId: 'p1',
+      unit: 'carton',
+    });
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/shopping/l1')).toBe(true);
+  });
+
   it('is read-only for a viewer', async () => {
     mockApi({
       ...signedIn(userWith({ householdRole: 'viewer' })),

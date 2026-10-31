@@ -1,6 +1,6 @@
 import { cn } from 'cn';
-import { Plus, X } from 'lucide-react';
-import { useState } from 'react';
+import { PackageCheck, Plus, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../../app/AuthContext.jsx';
 import {
   Button,
@@ -12,6 +12,8 @@ import {
   Spinner,
 } from '../../components/ui/index.jsx';
 import { can, formatQuantity } from '../../lib/food.js';
+import { AddFoodDialog } from '../stock/AddFoodDialog.jsx';
+import { useFoods } from '../stock/hooks.js';
 import {
   useAddShopping,
   useClearBought,
@@ -21,18 +23,29 @@ import {
 } from './hooks.js';
 
 /**
- * The household's shopping list: tick things off in the shop. Staples running low are suggested;
- * finished or thrown-away food can be added from the item itself.
+ * The household's shopping list: tick things off in the shop, then "Put away" opens Add food filled
+ * in. Staples running low are suggested; finished or thrown-away food can be added from the item.
  */
 export function ShoppingPage() {
   const { user } = useAuth();
   const list = useShopping();
+  // Loaded now so "Put away" can fill in a known food's category, unit and place at once.
+  useFoods();
   const add = useAddShopping();
   const update = useUpdateShopping();
   const del = useDeleteShopping();
   const clear = useClearBought();
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
+  // A bought item being put away: Add food opens filled in; once added it leaves the list.
+  const [putAway, setPutAway] = useState(null);
+  const removed = useRef(null);
+  const onPutAway = () => {
+    if (putAway && removed.current !== putAway.id) {
+      removed.current = putAway.id;
+      del.mutate(putAway.id);
+    }
+  };
   const isMember = can(user, 'member');
   const fail = add.error ?? update.error ?? del.error ?? clear.error;
 
@@ -150,6 +163,11 @@ export function ShoppingPage() {
                         </p>
                       )}
                     </div>
+                    {isMember && i.done && (
+                      <Button variant="secondary" size="sm" onClick={() => setPutAway(i)}>
+                        <PackageCheck aria-hidden="true" /> Put away
+                      </Button>
+                    )}
                     {isMember && (
                       <Button
                         variant="ghost"
@@ -172,6 +190,16 @@ export function ShoppingPage() {
             </Button>
           )}
         </div>
+      )}
+
+      {putAway && (
+        <AddFoodDialog
+          key={putAway.id}
+          open
+          prefill={{ name: putAway.name }}
+          onAdded={onPutAway}
+          onClose={() => setPutAway(null)}
+        />
       )}
     </>
   );

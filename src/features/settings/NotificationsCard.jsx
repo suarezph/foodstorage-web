@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../app/AuthContext.jsx';
 import { Button, Card, ErrorNotice, Select } from '../../components/ui/index.jsx';
 import { api } from '../../lib/api/client.js';
+import { can } from '../../lib/food.js';
 import { currentSubscription, pushSupport, turnOffPush, turnOnPush } from '../../lib/push.js';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -36,6 +38,9 @@ const Check = ({ checked, onChange, disabled, children }) => (
  * comes: email, push to this device, or both.
  */
 export function NotificationsCard() {
+  const { user } = useAuth();
+  // Test messages are for whoever sets the family up (the API allows managers only).
+  const tester = can(user, 'manager');
   const qc = useQueryClient();
   const key = useQuery({ queryKey: ['push', 'key'], queryFn: () => api('/push/key') });
   const settings = useQuery({
@@ -120,14 +125,16 @@ export function NotificationsCard() {
               >
                 Email it to {s.emailAddress}
               </Check>
-              <Button
-                variant="secondary"
-                size="sm"
-                loading={testEmail.isPending}
-                onClick={() => testEmail.mutate()}
-              >
-                Send a test email
-              </Button>
+              {tester && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={testEmail.isPending}
+                  onClick={() => testEmail.mutate()}
+                >
+                  Send a test email
+                </Button>
+              )}
             </div>
           )}
           {testEmail.data && (
@@ -157,14 +164,16 @@ export function NotificationsCard() {
               </Check>
               {here ? (
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={test.isPending}
-                    onClick={() => test.mutate()}
-                  >
-                    Send a test
-                  </Button>
+                  {tester && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={test.isPending}
+                      onClick={() => test.mutate()}
+                    >
+                      Send a test
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
