@@ -6,7 +6,10 @@ import { ChangePasswordPage } from '../features/auth/ChangePasswordPage.jsx';
 import { LoginPage } from '../features/auth/LoginPage.jsx';
 import { HomePage } from '../features/home/HomePage.jsx';
 import { HouseholdPage } from '../features/household/HouseholdPage.jsx';
+import { WastePage } from '../features/reports/WastePage.jsx';
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
+import { ShoppingPage } from '../features/shopping/ShoppingPage.jsx';
+import { FreezerPage } from '../features/stock/FreezerPage.jsx';
 import { StoragePage } from '../features/stock/StoragePage.jsx';
 import { useAuth } from './AuthContext.jsx';
 
@@ -79,6 +82,21 @@ export function App() {
             </RequireHousehold>
           }
         />
+        {[
+          ['/freezer', FreezerPage],
+          ['/shopping', ShoppingPage],
+          ['/waste', WastePage],
+        ].map(([path, Page]) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireHousehold>
+                <Page />
+              </RequireHousehold>
+            }
+          />
+        ))}
         <Route
           path="/household"
           element={
