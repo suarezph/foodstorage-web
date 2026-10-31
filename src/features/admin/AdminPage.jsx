@@ -138,6 +138,7 @@ function Households() {
 
 const blankUser = {
   username: '',
+  email: '',
   name: '',
   householdId: '',
   householdRole: 'member',
@@ -158,6 +159,7 @@ function NewPerson({ households, onCreated }) {
         create.mutate(
           {
             username: form.username.trim(),
+            email: form.email.trim(),
             name: form.name.trim(),
             role: form.admin ? 'admin' : 'user',
             householdId: form.householdId || null,
@@ -195,6 +197,24 @@ function NewPerson({ households, onCreated }) {
               placeholder="mia"
               autoCapitalize="none"
               maxLength={32}
+            />
+          )}
+        </Field>
+        <Field
+          label="Email"
+          error={fieldError('email')}
+          hint="They can sign in with it too. The daily summary is emailed here."
+        >
+          {(p) => (
+            <Input
+              {...p}
+              type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              value={form.email}
+              onChange={set('email')}
+              placeholder="mia@example.com"
+              maxLength={254}
             />
           )}
         </Field>
@@ -244,7 +264,8 @@ function NewPerson({ households, onCreated }) {
 function PersonRow({ person, households, isSelf, onReset }) {
   const update = useUpdateUser();
   const reset = useResetPassword();
-  const change = (body) => update.mutate({ id: person.id, ...body });
+  const [email, setEmail] = useState(null); // the email being edited, or null
+  const change = (body, opts) => update.mutate({ id: person.id, ...body }, opts);
   return (
     <li className="space-y-2 py-3">
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -256,6 +277,44 @@ function PersonRow({ person, households, isSelf, onReset }) {
           {person.mustChangePassword && ' · has a temporary password'}
         </span>
       </div>
+      {email === null ? (
+        <p className="text-sm">
+          {person.email ?? <span className="text-warning">No email yet</span>}{' '}
+          <button
+            type="button"
+            className="text-muted-foreground underline"
+            onClick={() => setEmail(person.email ?? '')}
+          >
+            {person.email ? 'Change' : 'Add email'}
+          </button>
+        </p>
+      ) : (
+        <form
+          className="flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            change({ email: email.trim() }, { onSuccess: () => setEmail(null) });
+          }}
+        >
+          <Input
+            aria-label={`${person.name}'s email`}
+            type="email"
+            inputMode="email"
+            autoCapitalize="none"
+            className="w-64"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={254}
+            autoFocus
+          />
+          <Button type="submit" size="sm" loading={update.isPending}>
+            Save
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setEmail(null)}>
+            Cancel
+          </Button>
+        </form>
+      )}
       {(update.error ?? reset.error) && <ErrorNotice error={update.error ?? reset.error} />}
       <div className="flex flex-wrap gap-2">
         <Select

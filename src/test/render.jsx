@@ -14,6 +14,7 @@ export const HOUSEHOLD = {
 export const userWith = (overrides = {}) => ({
   id: 'u1',
   username: 'alex',
+  email: 'alex@example.com',
   name: 'Alex',
   role: 'user',
   household: HOUSEHOLD,

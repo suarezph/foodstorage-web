@@ -20,6 +20,8 @@ export function SettingsPage() {
             <dd>{user.name}</dd>
             <dt className="text-muted-foreground">Username</dt>
             <dd>{user.username}</dd>
+            <dt className="text-muted-foreground">Email</dt>
+            <dd>{user.email ?? 'None yet (ask the administrator)'}</dd>
             <dt className="text-muted-foreground">Household</dt>
             <dd>
               {user.household
