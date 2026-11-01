@@ -40,6 +40,9 @@ checks every action anyway.
 - The daily summary can also come by email (API ADR 0007). The Settings card shows both ways:
   "Email it to …" with a test email, and push for this device. Which ways the server supports
   comes from `GET /push/settings` (`available`).
+- Members and managers with an email also see "Monthly medicine check" (API ADR 0009): one switch,
+  `medicineCheck`, for an email on the 1st listing everything in the medicine cabinet. Viewers
+  never see it.
 - `src/lib/push.js`: `pushSupport()` (`ok`, `ios-install`, `unsupported`, `denied`),
   `turnOnPush(publicKey)` (permission, `pushManager.subscribe`, `POST /push/subscriptions`) and
   `turnOffPush()` (this device only). On iPhone push needs the app on the Home Screen, and the

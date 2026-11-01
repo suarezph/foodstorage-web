@@ -41,6 +41,8 @@ export function NotificationsCard() {
   const { user } = useAuth();
   // Test messages are for whoever sets the family up (the API allows managers only).
   const tester = can(user, 'manager');
+  // Viewers never get medicine (API ADR 0008), so not the monthly check either (ADR 0009).
+  const seesMedicine = can(user, 'member');
   const qc = useQueryClient();
   const key = useQuery({ queryKey: ['push', 'key'], queryFn: () => api('/push/key') });
   const settings = useQuery({
@@ -143,6 +145,18 @@ export function NotificationsCard() {
             </p>
           )}
         </section>
+
+        {seesMedicine && s.available.email && s.emailAddress && (
+          <section className="space-y-2" aria-label="Medicine check">
+            <h3 className="text-sm font-medium">Monthly medicine check</h3>
+            <Check
+              checked={s.medicineCheck}
+              onChange={(medicineCheck) => patch.mutate({ medicineCheck })}
+            >
+              On the 1st of each month, email me everything in the medicine cabinet
+            </Check>
+          </section>
+        )}
 
         <section className="space-y-2" aria-label="As a notification">
           <h3 className="text-sm font-medium">As a notification</h3>
