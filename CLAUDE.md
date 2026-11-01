@@ -24,6 +24,7 @@ technical names nobody sees, and renaming them would mean a migration for no gai
 | Barcode scan (also iPhone) or type, shopping list with Put away, staples, waste report, freezer view | **Built** |
 | "What can I cook?" and a Getting started checklist on Home                                           | **Built** |
 | Medicine section (members and managers): 14-day flag, cabinet, for whom, dose note (API ADR 0008)    | **Built** |
+| Monthly medicine check switch in Settings (members and managers, API ADR 0009)                       | **Built** |
 | Production: https://usefirst.alexjohnsuarez.com, deployed by CI on push to main (with the API)       | **Live**  |
 
 Tests: `npm test` (fake API on `fetch`, never the network; plus a check that docs/stack.md matches package.json).

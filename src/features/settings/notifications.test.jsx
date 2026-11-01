@@ -10,6 +10,7 @@ const settings = {
   hour: 8,
   push: true,
   email: true,
+  medicineCheck: true,
   devices: 0,
   emailAddress: 'alex@example.com',
   available: { push: true, email: true },
@@ -90,5 +91,30 @@ describe('Notifications settings', () => {
     renderApp('/settings');
     expect(await screen.findByLabelText('Email it to alex@example.com')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Send a test email' })).not.toBeInTheDocument();
+  });
+
+  it('turns the monthly medicine check off, and hides it from viewers', async () => {
+    let current = { ...settings };
+    const calls = mockApi({
+      ...signedIn(userWith({ householdRole: 'member' })),
+      'GET /push/key': () => ({ enabled: true, publicKey: 'BKey' }),
+      'GET /push/settings': () => current,
+      'PATCH /push/settings': (body) => (current = { ...current, ...body }),
+    });
+    const { unmount } = renderApp('/settings');
+    const box = await screen.findByLabelText(/email me everything in the medicine cabinet/);
+    expect(box).toBeChecked();
+    await userEvent.click(box);
+    expect(calls.find((c) => c.method === 'PATCH').body).toEqual({ medicineCheck: false });
+    unmount();
+
+    mockApi({
+      ...signedIn(userWith({ householdRole: 'viewer' })),
+      'GET /push/key': () => ({ enabled: true, publicKey: 'BKey' }),
+      'GET /push/settings': () => settings,
+    });
+    renderApp('/settings');
+    expect(await screen.findByLabelText('Email it to alex@example.com')).toBeInTheDocument();
+    expect(screen.queryByText('Monthly medicine check')).not.toBeInTheDocument();
   });
 });
